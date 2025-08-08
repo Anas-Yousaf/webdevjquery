@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>jQuery - Simplifying JavaScript</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #ffffff;
+            color: #333;
+            overflow: hidden;
+        }
+
+        .slides-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .slide.prev {
+            transform: translateX(-100%);
+        }
+
+        /* Slide-specific backgrounds */
+        .slide:nth-child(1) { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .slide:nth-child(2) { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .slide:nth-child(3) { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .slide:nth-child(4) { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .slide:nth-child(5) { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .slide:nth-child(6) { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 4rem);
+            margin-bottom: 1rem;
+            text-align: center;
+            opacity: 0;
+            animation: slideInUp 1s ease-out 0.5s forwards;
+        }
+
+        h2 {
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            opacity: 0;
+            animation: slideInUp 1s ease-out 0.7s forwards;
+        }
+
+        .content {
+            max-width: 900px;
+            text-align: center;
+            opacity: 0;
+            animation: fadeInScale 1s ease-out 0.9s forwards;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideInUp 0.8s ease-out forwards;
+        }
+
+        .feature-card:nth-child(1) { animation-delay: 1.1s; }
+        .feature-card:nth-child(2) { animation-delay: 1.3s; }
+        .feature-card:nth-child(3) { animation-delay: 1.5s; }
+        .feature-card:nth-child(4) { animation-delay: 1.7s; }
+
+        .feature-card h3 {
+            color: #fff;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .code-demo {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .code-demo::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        .jquery-code {
+            color: #61dafb;
+            display: block;
+            margin: 0.5rem 0;
+            opacity: 0;
+            animation: typeIn 0.05s forwards;
+        }
+
+        .vanilla-code {
+            color: #ffa500;
+            display: block;
+            margin: 0.5rem 0;
+            opacity: 0;
+            animation: typeIn 0.05s forwards;
+        }
+
+        .navigation {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-weight: 600;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .slide-counter {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+        }
+
+        .functionality-analyzer {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .analyzer-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .analyzer-output {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+            margin-top: 1rem;
+            min-height: 100px;
+        }
+
+        .comparison-table {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 2rem 0;
+        }
+
+        .comparison-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .comparison-table th {
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+        }
+
+        .demo-button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .demo-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .animation-demo {
+            width: 100px;
+            height: 100px;
+            background: #fff;
+            border-radius: 50%;
+            margin: 2rem auto;
+            transition: all 0.3s ease;
+        }
+
+        @keyframes slideInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInScale {
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes shimmer {
+            to {
+                left: 100%;
+            }
+        }
+
+        @keyframes typeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .slide {
+                padding: 1rem;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .navigation {
+                bottom: 1rem;
+                gap: 0.5rem;
+            }
+            
+            .nav-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="slides-container">
+        <!-- Slide 1: Introduction -->
+        <div class="slide active">
+            <h1>jQuery</h1>
+            <h2>Simplifying JavaScript</h2>
+            <div class="content">
+                <p style="font-size: 1.3rem; margin-bottom: 2rem;">The fast, small, and feature-rich JavaScript library</p>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>💡 Easy to Learn</h3>
+                        <p>Simple, intuitive syntax that makes JavaScript accessible</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🚀 Cross-browser</h3>
+                        <p>Works consistently across all major browsers</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>⚡ Lightweight</h3>
+                        <p>Small file size with powerful functionality</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🔧 Versatile</h3>
+                        <p>DOM manipulation, events, animations, and AJAX</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: Why jQuery? -->
+        <div class="slide">
+            <h2>Why Use jQuery?</h2>
+            <div class="content">
+                <div class="comparison-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Vanilla JavaScript</th>
+                                <th>jQuery</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>document.getElementById('myId')</td>
+                                <td>$('#myId')</td>
+                            </tr>
+                            <tr>
+                                <td>element.addEventListener('click', func)</td>
+                                <td>$('#myId').click(func)</td>
+                            </tr>
+                            <tr>
+                                <td>element.style.display = 'none'</td>
+                                <td>$('#myId').hide()</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 2rem;">
+                    <h3 style="margin-bottom: 1rem;">Key Benefits:</h3>
+                    <p style="font-size: 1.2rem; line-height: 1.6;">
+                        ✅ Shorter, cleaner code<br>
+                        ✅ Chain multiple operations<br>
+                        ✅ Built-in browser compatibility<br>
+                        ✅ Rich ecosystem of plugins<br>
+                        ✅ Extensive community support
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Selectors and Events -->
+        <div class="slide">
+            <h2>jQuery Selectors & Events</h2>
+            <div class="content">
+                <div class="code-demo">
+                    <div class="jquery-code">// CSS-style selectors</div>
+                    <div class="jquery-code">$('p')           // All paragraphs</div>
+                    <div class="jquery-code">$('.class')     // By class</div>
+                    <div class="jquery-code">$('#id')        // By ID</div>
+                    <div class="jquery-code">$('div > p')    // Child selector</div>
+                    <div class="jquery-code">$('[data-*]')   // Attribute selector</div>
+                    <br>
+                    <div class="jquery-code">// Event handling</div>
+                    <div class="jquery-code">$('#button').click(function() {</div>
+                    <div class="jquery-code">    alert('Button clicked!');</div>
+                    <div class="jquery-code">});</div>
+                </div>
+                <button class="demo-button" id="selectorDemo">Try Selector Demo</button>
+                <div id="selectorResult" style="margin-top: 1rem; font-size: 1.1rem;"></div>
+            </div>
+        </div>
+
+        <!-- Slide 4: DOM Manipulation -->
+        <div class="slide">
+            <h2>DOM Manipulation with jQuery</h2>
+            <div class="content">
+                <div class="code-demo">
+                    <div class="jquery-code">// Content manipulation</div>
+                    <div class="jquery-code">$('#content').text('New text');</div>
+                    <div class="jquery-code">$('#content').html('&lt;b&gt;Bold text&lt;/b&gt;');</div>
+                    <div class="jquery-code">$('#input').val('New value');</div>
+                    <br>
+                    <div class="jquery-code">// CSS manipulation</div>
+                    <div class="jquery-code">$('.box').css('color', 'red');</div>
+                    <div class="jquery-code">$('.box').addClass('highlight');</div>
+                    <div class="jquery-code">$('.box').removeClass('old-class');</div>
+                    <br>
+                    <div class="jquery-code">// DOM insertion</div>
+                    <div class="jquery-code">$('#container').append('&lt;p&gt;New paragraph&lt;/p&gt;');</div>
+                    <div class="jquery-code">$('#container').prepend('&lt;h3&gt;Title&lt;/h3&gt;');</div>
+                </div>
+                <button class="demo-button" id="domDemo">Try DOM Demo</button>
+                <div id="domResult" style="margin-top: 1rem;"></div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Animations and Effects -->
+        <div class="slide">
+            <h2>Animations & Effects</h2>
+            <div class="content">
+                <div class="code-demo">
+                    <div class="jquery-code">// Basic animations</div>
+                    <div class="jquery-code">$('#box').hide();      // Instant hide</div>
+                    <div class="jquery-code">$('#box').fadeOut();   // Fade out</div>
+                    <div class="jquery-code">$('#box').slideUp();   // Slide up</div>
+                    <br>
+                    <div class="jquery-code">// Custom animations</div>
+                    <div class="jquery-code">$('#box').animate({</div>
+                    <div class="jquery-code">    left: '250px',</div>
+                    <div class="jquery-code">    opacity: 0.5</div>
+                    <div class="jquery-code">}, 1000);</div>
+                </div>
+                <div class="animation-demo" id="animationBox"></div>
+                <div>
+                    <button class="demo-button" id="fadeDemo">Fade</button>
+                    <button class="demo-button" id="slideDemo">Slide</button>
+                    <button class="demo-button" id="animateDemo">Animate</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: AJAX & Functionality Analyzer -->
+        <div class="slide">
+            <h2>AJAX Basics & Functionality Analyzer</h2>
+            <div class="content">
+                <div class="code-demo">
+                    <div class="jquery-code">// Simple AJAX request</div>
+                    <div class="jquery-code">$.ajax({</div>
+                    <div class="jquery-code">    url: 'api/data',</div>
+                    <div class="jquery-code">    method: 'GET',</div>
+                    <div class="jquery-code">    success: function(data) {</div>
+                    <div class="jquery-code">        console.log(data);</div>
+                    <div class="jquery-code">    }</div>
+                    <div class="jquery-code">});</div>
+                </div>
+                
+                <div class="functionality-analyzer">
+                    <h3>jQuery Functionality Analyzer</h3>
+                    <p>Enter jQuery code to analyze its functionality:</p>
+                    <textarea class="analyzer-input" id="codeInput" placeholder="Example: $('#myDiv').fadeIn().addClass('active')"></textarea>
+                    <button class="demo-button" id="analyzeCode">Analyze Code</button>
+                    <div class="analyzer-output" id="analysisResult">
+                        <p><strong>Analysis will appear here...</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-counter">
+        <span id="currentSlide">1</span> / <span id="totalSlides">6</span>
+    </div>
+
+    <div class="navigation">
+        <button class="nav-btn" id="prevBtn">← Previous</button>
+        <button class="nav-btn" id="nextBtn">Next →</button>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            let currentSlide = 0;
+            const totalSlides = $('.slide').length;
+            $('#totalSlides').text(totalSlides);
+
+            function showSlide(index) {
+                $('.slide').removeClass('active prev');
+                $('.slide').eq(index).addClass('active');
+                if (index > 0) {
+                    $('.slide').eq(index - 1).addClass('prev');
+                }
+                $('#currentSlide').text(index + 1);
+                
+                // Trigger animations for code demos
+                setTimeout(() => {
+                    $('.slide.active .jquery-code, .slide.active .vanilla-code').each(function(i) {
+                        $(this).css('animation-delay', (i * 0.1) + 's');
+                    });
+                }, 100);
+            }
+
+            $('#nextBtn').click(function() {
+                if (currentSlide < totalSlides - 1) {
+                    currentSlide++;
+                    showSlide(currentSlide);
+                }
+            });
+
+            $('#prevBtn').click(function() {
+                if (currentSlide > 0) {
+                    currentSlide--;
+                    showSlide(currentSlide);
+                }
+            });
+
+            // Keyboard navigation
+            $(document).keydown(function(e) {
+                if (e.key === 'ArrowRight' && currentSlide < totalSlides - 1) {
+                    currentSlide++;
+                    showSlide(currentSlide);
+                } else if (e.key === 'ArrowLeft' && currentSlide > 0) {
+                    currentSlide--;
+                    showSlide(currentSlide);
+                }
+            });
+
+            // Demo functionality
+            $('#selectorDemo').click(function() {
+                const demoText = "Selected elements: " + $('.feature-card').length + " feature cards found!";
+                $('#selectorResult').text(demoText).css('color', '#ffeb3b');
+                $('.feature-card').animate({
+                    backgroundColor: 'rgba(255, 235, 59, 0.3)'
+                }, 300).delay(1000).animate({
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                }, 300);
+            });
+
+            $('#domDemo').click(function() {
+                const newContent = $('<div class="demo-content" style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 10px; margin-top: 1rem;">').html(
+                    '<strong>DOM Manipulation Demo:</strong><br>This content was added dynamically using jQuery!'
+                );
+                $('#domResult').empty().append(newContent.hide().fadeIn(500));
+            });
+
+            // Animation demos
+            $('#fadeDemo').click(function() {
+                $('#animationBox').fadeOut(300).fadeIn(300);
+            });
+
+            $('#slideDemo').click(function() {
+                $('#animationBox').slideUp(300).slideDown(300);
+            });
+
+            $('#animateDemo').click(function() {
+                $('#animationBox').animate({
+                    marginLeft: '100px',
+                    width: '150px',
+                    height: '150px'
+                }, 500).animate({
+                    marginLeft: '0px',
+                    width: '100px',
+                    height: '100px'
+                }, 500);
+            });
+
+            // Code analyzer
+            $('#analyzeCode').click(function() {
+                const code = $('#codeInput').val().trim();
+                if (!code) {
+                    $('#analysisResult').html('<p><strong>Please enter some jQuery code to analyze.</strong></p>');
+                    return;
+                }
+
+                let analysis = '<p><strong>Code Analysis:</strong></p><ul>';
+                
+                if (code.includes('$')) {
+                    analysis += '<li>✅ Uses jQuery selector ($)</li>';
+                }
+                if (code.includes('.fadeIn') || code.includes('.fadeOut')) {
+                    analysis += '<li>🎭 Includes fade animation</li>';
+                }
+                if (code.includes('.addClass') || code.includes('.removeClass')) {
+                    analysis += '<li>🎨 Modifies CSS classes</li>';
+                }
+                if (code.includes('.click') || code.includes('.on(')) {
+                    analysis += '<li>👆 Handles events</li>';
+                }
+                if (code.includes('.ajax') || code.includes('$.get') || code.includes('$.post')) {
+                    analysis += '<li>🌐 Makes AJAX requests</li>';
+                }
+                if (code.includes('.animate')) {
+                    analysis += '<li>✨ Custom animation</li>';
+                }
+                if (code.includes('.text') || code.includes('.html') || code.includes('.val')) {
+                    analysis += '<li>📝 Content manipulation</li>';
+                }
+
+                // Method chaining detection
+                const chainCount = (code.match(/\./g) || []).length;
+                if (chainCount > 2) {
+                    analysis += '<li>🔗 Uses method chaining (' + (chainCount - 1) + ' methods chained)</li>';
+                }
+
+                analysis += '</ul>';
+                analysis += '<p><strong>Code complexity:</strong> ' + (chainCount > 4 ? 'Advanced' : chainCount > 2 ? 'Intermediate' : 'Beginner') + '</p>';
+                
+                $('#analysisResult').html(analysis);
+            });
+
+            // Add some example code for demonstration
+            setTimeout(() => {
+                $('#codeInput').val("$('#myDiv').fadeIn().addClass('active').css('color', 'blue')");
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
